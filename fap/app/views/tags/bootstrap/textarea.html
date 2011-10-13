@@ -1,0 +1,15 @@
+*{
+	_name  :
+	_label :
+	_value :
+	_help  :  
+}*
+
+%{
+	def rows = _rows ? _rows : 3
+}%
+
+
+#{bootstrap.input label:_label, help:_help }
+	<textarea class="xxlarge" rows="${rows}" name="${_name}">${_value}</textarea>
+#{/bootstrap.input}

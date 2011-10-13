@@ -1,0 +1,14 @@
+*{
+	_name
+	_value
+	_error
+	_label
+}*
+#{bootstrap.input help:_help, error:_error }
+	<div class="inputs-list">
+	<label>
+    	<input type="checkbox" name="${_name}" value="${_value}" class="${error_class}" #{if _checked}checked="checked"#{/if}>
+		<span>${_label}</span>
+	</label>
+	</div>
+#{/bootstrap.input}

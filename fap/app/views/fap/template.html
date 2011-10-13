@@ -7,13 +7,12 @@
         
         <link rel="shortcut icon" type="image/png" href="@{'/public/images/favicon.png'}">
         
-
-        #{stylesheet '960/960-all-min.css'/}
+        
         #{stylesheet 'jquery-ui.css' /}
+        *{
         <link rel="stylesheet" href="@{'/public/javascripts/ext/resources/css/ext-all.css'}" />
-        <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.3.0/bootstrap.min.css">
-        #{stylesheet 'main.css' /}
-        #{stylesheet 'fap.css' /}
+        }*
+        #{stylesheet 'bootstrap.less' /}
           
         #{get 'moreStyles' /}
         
@@ -45,27 +44,22 @@
                	
     </head>
     <body>
-    	<div class="wrapper container_12">
-			<div id="header" class="grid_12">
-			
-				<div id="logoAciisi">
+    	<div class="container wrapper">
+    		<div class="content">
+			<div id="header" class="row">
+				<div id="logoAciisi" class="span8">
 					<a href="@{SolicitudesController.index}" title="&{play.configuration.get('fap.app.name', 'Sin Nombre')}">
 						<img src="@{'/public/images/aciisi_gris.gif'}" width="185px" height="75px"/>
 					</a>
-				</div>	
-			
-				<div id="banderaue">
+				</div>				
+				<div id="banderaue" class="span8">
 					<img src="@{'/public/images/logo_ue.gif'}" width="147px" height="64px"/>
 				</div>
-			
 	    	</div>
 	    	
-	    	
-	    	<div class="clear"></div>
-	    	
-	    	<div class="cabeceraUsuario">
+	    	<div class="cabeceraUsuario row">
 				#{if cabeceraUsuario}
-					<div class="grid_12 getCabeceraUsuario">
+					<div class="span16 getCabeceraUsuario">
 						#{get 'cabeceraUsuario' /}
 					</div>
 				#{/if}
@@ -127,20 +121,15 @@
 				</div>
 			#{/if}
 			#{else}
-					<div id="content" class="grid_12">
-						#{doLayout /}
-					</div>
-			#{/else}
-			
-			
-			<div class="footer grid_12">
-				<div class="grid_6 omega">©Gobierno de Canarias</div>
-				<div class="grid_6 alpha avisoLegal">
-					<a href="http://www.gobiernodecanarias.org/avisolegal.html">Aviso Legal </a>
+				<div class="row">
+					#{doLayout /}
 				</div>
+			#{/else}
 			</div>
-		
-			<div class="clear"></div>
+			
+			<div class="footer">
+				©Gobierno de Canarias - <a href="http://www.gobiernodecanarias.org/avisolegal.html">Aviso Legal </a>
+			</div>
 	    </div>
 		
 

@@ -1,0 +1,65 @@
+html, body {
+	background-color : @bblue;
+}
+
+
+.content {
+	background-color: white;
+	padding: 20px;
+	margin: 0 -20px;
+	.border-radius(0 0 6px 6px);
+	.box-shadow(0 1px 2px rgba(0,0,0,.15));
+}
+
+.footer {
+	text-align: center;
+	margin-top: 5px;
+}
+
+//FIX:Platino websigner añade un margen superior por defecto
+applet {
+	position: fixed;
+}
+
+@grupo-border-color : #C5DCE8;
+@grupo-header-bg : #DCE8F4;
+
+.grupo {
+	border: 5px solid;
+	border-color: lighten(@grupo-border-color, 12%);
+	margin-bottom: 5px;
+	.border-radius(5px);
+}
+
+.grupo-header {
+	border: 1px solid @grupo-border-color;
+	background-color: @grupo-header-bg;
+	
+	#gradient > .vertical(@grupo-header-bg,darken(@grupo-header-bg, 5%));
+	
+	font-weight: bold;
+	padding-left: 5px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	color: #003366;
+	text-shadow: 0px 1px 0px #fff;
+	margin-bottom: 0;	
+}
+	
+.grupo-content {
+	border: solid @grupo-border-color;
+	border-width: 0 1px 1px 1px;
+	padding-left: 5px;
+	padding-right: 5px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	form {
+		margin-bottom : 0;
+		.actions {
+			margin-bottom : 0;
+			margin-left: -5px;
+			margin-right: -5px;
+			margin-bottom : -10px;
+		}	
+	}
+}

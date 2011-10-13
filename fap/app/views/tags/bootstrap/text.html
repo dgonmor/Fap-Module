@@ -1,0 +1,18 @@
+*{
+	_label
+	_name
+	_value
+	_error
+	_type
+}*
+
+%{
+	def error_class = _error ? 'error' : ''
+	def type = _type ? _type : 'text'
+}%
+
+
+
+#{bootstrap.input label:_label, help:_help, error:_error }
+	<input type="${type}" name="${_name}" class="${error_class}" value="${_value}"/>
+#{/bootstrap.input}

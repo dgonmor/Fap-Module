@@ -1,0 +1,29 @@
+*{
+	_label
+	_name
+	_error
+}*
+
+%{
+	def error_class = _error ? 'error' : ''
+}%
+
+<div class="clearfix ${error_class}">
+	#{if _label}<label>${_label}</label>#{/if}
+	<div class="input">	
+		#{doBody /}
+		
+		#{if _error}
+		<span class="help-inline">
+			${_error.raw()}
+		</span>
+		#{/if}		
+		
+		#{if _help}
+		<span class="help-block">
+			${_help.raw()}
+		</span>
+		#{/if}
+		
+	</div>
+</div>

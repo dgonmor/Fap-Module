@@ -21,7 +21,7 @@
 #{/set}
 
 
-<div id="instrucciones" class="grid_6 alpha">
+<div id="instrucciones" class="span8">
 	#{fap.grupo titulo:"Instrucciones"}
 		<p>
 		   En el caso en que no vea su certificado o no pueda acceder a la aplicación, debe seguir los pasos que se indican 
@@ -57,12 +57,12 @@
 	#{/fap.grupo}
 	
 	#{fap.grupo titulo:"Ayuda"}	
-		<a href="#"><button class="boton">Manual de usuario</button></a>
-		<a href="@{SoporteController.index}" class="boton">Preguntas e incidencias</a>
+		<a class="btn" href="#">Manual de usuario</a>
+		<a href="@{SoporteController.index}" class="btn">Preguntas e incidencias</a>
 	#{/fap.grupo}
 </div>
 
-<div class="grid_6 omega">
+<div class="span8">
 
 #{fap.messages}
 
@@ -75,15 +75,13 @@
 		#{form @authenticateCertificate(), id:"cert-form"}
 			<input type="hidden" id="token" name="token" value="${token}"/>
 			<input type="hidden" id="firma" name="firma" value=""/>
-			<div class="form-row">
-				<select id="certificado" name="certificado">
-					<option disabled="disabled">--Certificados--</option>
-				</select>
+			
+			#{bootstrap.select name:'certificado',label:'Certificado', style:'width:100%'/}
+
+			<div class="actions">
+				<input type="submit" id="loginsignin" value="&{'fap.login.signin'}" class="btn primary" />
 			</div>
 			
-			<div class="button_container">
-				<input type="submit" id="loginsignin" value="&{'fap.login.signin'}" class="boton" />
-			</div>
 		#{/form}
 		<div id="cert-msg"></div>
 					
@@ -108,28 +106,11 @@
 #{if showUser}
 		#{fap.grupo titulo:"Acceso mediante usuario y contraseña"}
 			#{form @authenticate(), id:"authen-form"}
-				<div class="form-row">
-					<label for="username">&{'fap.login.username'}</label>
-					<input type="text" name="username" id="login-username" value="${flash.username}" />
-				</div>
-				<div class="form-row">
-					<label for="password">&{'fap.login.password'}</label>
-					<input type="password" name="password" id="login-password" value="" />
-				</div>
-
-
-
-                <div class="form-row">
-					<div class="check">
-                        <label for="remember">
-						<input type="checkbox" name="remember" id="login-remember" ${flash.remember ? 'checked="true"' : ''} />
-                        &{'fap.login.remember'}
-						</label>
-					</div>
-				</div>
-
-				<div class="button_container">
-					<input class="boton" type="submit" id="signin" value="&{'fap.login.signin'}" />
+				#{bootstrap.text label:play.i18n.Messages.get('fap.login.username'), name:'username', value:flash.username /}
+				#{bootstrap.text label:play.i18n.Messages.get('fap.login.password'), name:'password', value:'', type:'password' /}
+				#{bootstrap.check label:play.i18n.Messages.get('fap.login.remember'), name:"remember", checked:flash.remember /}
+				<div class="actions">
+					<input class="btn primary" type="submit" id="signin" value="&{'fap.login.signin'}" />
 				</div>
 			#{/form}
 			
@@ -140,8 +121,6 @@
 					});
 				});
 			</script>
-			
-			
 		#{/fap.grupo}	
 #{/if}
 	
