@@ -16,9 +16,7 @@
 	else
 		requerido = false
 	
-	def checked = ""
-	if((value == true) || (value == 'on'))
-		checked = "checked=\"true\""
+	def checked = (value == true) || (value == 'on')
 	
 	def stackDisabled = tags.TagMapStack.top("editable")
 	def disabled = stackDisabled == null || stackDisabled? '' : 'disabled="disabled"'
@@ -30,10 +28,14 @@
 	def styleLabel = _anchoTitulo != null ? "width:${_anchoTitulo}" : ""
 	
 }%
+	*{
 	<div class="form-row">
 		<div class="check">
             <label for="${id}" style="${styleLabel}"><input type="checkbox" id="${id}" name="${field.name}" ${checked} ${disabled}></input>${label}</label>
 		</div>
 	</div>
+	}*
+	
+	#{bootstrap.check label:label, name:field.name, checked: checked /}
 	
 #{/fap.field}

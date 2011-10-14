@@ -59,9 +59,20 @@
 	}
 }%
 
+	*{
 	#{fap.formrow id:id, label:label, ayuda:ayuda, visible:showRow, requerido:requerido, errores:field.error, anchoBloque:anchoBloque, anchoTitulo:anchoTitulo}
 		<input id="${id}" type="text" name="${field.name}" value="${value}" ${onBlurStr} ${disabled} #{if style}style="${style}"#{/if}>
 	#{/fap.formrow}
+	}*
+	
+	
+	
+	#{if stackDisabled}
+		#{bootstrap.uneditable id:id, label:label, required:requerido, help:ayuda, value:value, error:field.error /}
+	#{/if}
+	#{else}
+		#{bootstrap.text       id:id, label:label, required:requerido, help:ayuda, value:value, style:style, error:field.error /}
+	#{/else}
 	
 %{
 

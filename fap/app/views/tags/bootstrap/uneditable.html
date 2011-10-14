@@ -5,5 +5,5 @@
 }*
 
 #{bootstrap.input label:_label, help:_help }
-	<span class="uneditable-input">${_value}</span>
+	<span #{if _id}id=${_id}#{/if} class="uneditable-input">${_value}</span>
 #{/bootstrap.input}

@@ -1,19 +1,27 @@
 *{
+	_id
 	_options :
 	_optionsText:
 	_optionsValue:
 	_value
+	_values
 	_style
 }*
 
 #{bootstrap.input label:_label, help:_help, error:_error }
-	<select name="${_name}" #{if _style}style="${_style}"#{/if}>
+	<select #{if _id}id="${_id}"#{/if} name="${_name}" #{if _style}style="${_style}"#{/if}>
 		<option> </option>								
 		#{list items:_options, as:'option'}
 			%{
 				def optionText  = option."${_optionsText}"
 				def optionValue = option."${_optionsValue}"				
-				def selected = optionValue == _value ? 'selected=selected' : ''
+				def selected = ''
+				if( 
+				  (_value != null && optionValue.equals(_value)) ||
+				  (_values != null && _values.contains(optionValue))
+				){
+					selected = 'selected=selected'
+				}
 			}%
 			<option value="${optionValue}" ${selected}>${optionText}</option>
 		#{/list}

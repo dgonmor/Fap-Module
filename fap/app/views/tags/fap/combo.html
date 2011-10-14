@@ -36,10 +36,8 @@
 	def comboText = _comboText != null? _comboText : "value"		
 }%
 
-	#{fap.formrow id:id, label:label, ayuda:ayuda, visible:showRow, requerido:requerido, errores:field.error, anchoBloque:anchoBloque, anchoTitulo:anchoTitulo}
 		%{
 			//
-			
 			multiple = field.isCollection;
 			
 			if(field.reference){
@@ -91,6 +89,15 @@
 			}
 		}%
 		
+	#{if stackDisabled}
+		#{bootstrap.uneditable id:id, label:label, required:requerido, help:ayuda, value:value, error:field.error /}		
+	#{/if}
+	#{else}
+		#{bootstrap.select id:id, label:label, name:field.name, options:items, optionsValue:'key', optionsText:'value', values: values, error:field.error/}
+	#{/else}
+
+	*{
+	#{fap.formrow id:id, label:label, ayuda:ayuda, visible:showRow, requerido:requerido, errores:field.error, anchoBloque:anchoBloque, anchoTitulo:anchoTitulo}		
 		<select class="combo" data-placeholder="Seleccione..." id="${id}" name="${field.name}" #{if multiple} multiple #{/if} ${disabled} #{if style}style="${style}"#{/if}>
 			#{if blanco && !multiple}
 			<option> </option>
@@ -106,6 +113,10 @@
 			#{/list}
 		</select>
 	#{/fap.formrow}
+	}*
+	
+	
+	
 
 	#{if multiple}
 		<script>

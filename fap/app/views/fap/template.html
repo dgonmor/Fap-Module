@@ -9,11 +9,9 @@
         
         
         #{stylesheet 'jquery-ui.css' /}
-        *{
         <link rel="stylesheet" href="@{'/public/javascripts/ext/resources/css/ext-all.css'}" />
-        }*
         #{stylesheet 'bootstrap.less' /}
-          
+                 
         #{get 'moreStyles' /}
         
         #{script src:"jquery/jquery-1.6.1.min.js" /}
@@ -88,7 +86,7 @@
 					<div class="user">
 						<ul class="secondary-nav">
 							<li class="dropdown" data-dropdown="dropdown" >
-						    	<a href="#" class="dropdown-toggle"><strong>Axel Hernández Ferrera ${user}</strong>#{if agente.roles.size() > 1} (${models.TableKeyValue.getValue("roles", agente.rolActivo)})#{/if}</a>
+						    	<a href="#" class="dropdown-toggle"><strong>${user}</strong>#{if agente.roles.size() > 1} (${models.TableKeyValue.getValue("roles", agente.rolActivo)})#{/if}</a>
 							    <ul class="dropdown-menu">
 							      #{if agente.roles.size() > 1}
 							      	#{list items:agente.roles, as:'rol'}
