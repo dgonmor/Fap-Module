@@ -64,14 +64,14 @@
 					</div>
 				#{/if}
 
-				#{if cabeceraUsuario == null}
+				%{
+					def agente = controllers.fap.AgenteController.getAgente();
+				}%
+
+				#{if agente}
 					%{
-						l : {
-						def agente = controllers.fap.AgenteController.getAgente();
-						def user = null;
-						if (agente != null)
-							user = agente.name ?: agente.username
-					%}	
+						user = agente.name ?: agente.username
+					%}
 					<div class="migas">
 						#{if user != null}
 							#{if solicitud != null}
@@ -85,50 +85,28 @@
 							#{fap.breadcrumbs title:title/}
 						#{/else}
 					</div>
-					
 					<div class="user">
-						#{if agente.roles.size() > 1}
-							<ul class="secondary-nav">
+						<ul class="secondary-nav">
 							<li class="dropdown" data-dropdown="dropdown" >
-						    <a href="#" class="dropdown-toggle"><strong>Axel Hernández Ferrera ${user}</strong> (${models.TableKeyValue.getValue("roles", agente.rolActivo)})</a>
-						    <ul class="dropdown-menu">
-						      #{if agente.roles.size() > 1}
-						      	#{list items:agente.roles, as:'rol'}
-						      		<li><a href="@{fap.SecureController.changeRol(request.url, rol)}">${models.TableKeyValue.getValue("roles", rol)}</a></li>
-						      	#{/list}
-						      <li class="divider"></li>
-						      #{/if}
-						      <li><a href="@{fap.SecureController.logout()}">&{'fap.header.logout'}</a></li>
-						    </ul>
-						  </li>
-						  </ul>
-						#{/if}
-						#{else}
-							<strong>${user}</strong>
-						#{/else}
-						
-						*{
-						#{if agente != null}
-							#{if agente.roles.size() > 1}
-								#{form @fap.SecureController.changeRol(), id:"changeRolForm"}
-								<input type="hidden" name="url" value="${request.url}">
-								&{'fap.header.rol'}
-									<select id="listaRoles" name="rol" size="1">
-										#{list items:agente.roles, as:'entry'}
-										%{def selected = entry.equals(agente.rolActivo)? 'selected="selected"' : ''%}
-										<option value="${entry}" ${selected}>${models.TableKeyValue.getValue("roles", entry)}</option>
-										#{/list}
-									</select>
-								#{/form}
-							#{/if}
-							#{a @fap.SecureController.logout()}&{'fap.header.logout'}#{/a}
-						#{/if}
-						}*
-					%{	
-						}
-					%}	
-					</div>
+						    	<a href="#" class="dropdown-toggle"><strong>Axel Hernández Ferrera ${user}</strong>#{if agente.roles.size() > 1} (${models.TableKeyValue.getValue("roles", agente.rolActivo)})#{/if}</a>
+							    <ul class="dropdown-menu">
+							      #{if agente.roles.size() > 1}
+							      	#{list items:agente.roles, as:'rol'}
+							      		<li><a href="@{fap.SecureController.changeRol(request.url, rol)}">${models.TableKeyValue.getValue("roles", rol)}</a></li>
+							      	#{/list}
+							      <li class="divider"></li>
+							      #{/if}
+							      <li><a href="@{fap.SecureController.logout()}">&{'fap.header.logout'}</a></li>
+							    </ul>
+							</li>
+						</ul>
+					</div>				
 				#{/if}
+				#{else}
+					<div class="span16">
+						<strong>${configfap.get('fap.app.name')}</strong>
+					</div>
+				#{/else}
 			</div>
 	    				
 			#{if menu != null}
