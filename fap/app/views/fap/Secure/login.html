@@ -2,9 +2,6 @@
 
 #{set title:configfap.get('fap.app.name')/}
 
-#{set 'cabeceraUsuario'}
-	<p>&{'fap.login.welcome', configfap.get('fap.app.name')}</p>
-#{/set}
 
 %{
 	showCert = configfap.getBoolean('fap.login.type.cert')
@@ -56,9 +53,11 @@
 		</ul>
 	#{/fap.grupo}
 	
-	#{fap.grupo titulo:"Ayuda"}	
-		<a class="btn" href="#">Manual de usuario</a>
-		<a href="@{SoporteController.index}" class="btn">Preguntas e incidencias</a>
+	#{fap.grupo titulo:"Ayuda"}
+		<div style="text-align: center">
+			<a class="btn" href="#" style="width:170px">Manual de usuario</a>
+			<a href="@{SoporteController.index}" class="btn"  style="width:170px">Preguntas e incidencias</a>
+		</div>
 	#{/fap.grupo}
 </div>
 
@@ -68,10 +67,8 @@
 
 #{if showCert}
 
-	
 
-
-	#{fap.grupo titulo:"Login"}
+	#{fap.grupo titulo:"Acceso mediante certificado electrónico"}
 		#{form @authenticateCertificate(), id:"cert-form"}
 			<input type="hidden" id="token" name="token" value="${token}"/>
 			<input type="hidden" id="firma" name="firma" value=""/>
@@ -79,7 +76,7 @@
 			#{bootstrap.select name:'certificado',label:'Certificado', style:'width:100%'/}
 
 			<div class="actions">
-				<input type="submit" id="loginsignin" value="&{'fap.login.signin'}" class="btn primary" />
+				<input type="submit" id="loginsignin" value="&{'fap.login.signin'}" class="btn" />
 			</div>
 			
 		#{/form}
@@ -110,7 +107,7 @@
 				#{bootstrap.text label:play.i18n.Messages.get('fap.login.password'), name:'password', value:'', type:'password' /}
 				#{bootstrap.check label:play.i18n.Messages.get('fap.login.remember'), name:"remember", checked:flash.remember /}
 				<div class="actions">
-					<input class="btn primary" type="submit" id="signin" value="&{'fap.login.signin'}" />
+					<input class="btn" type="submit" id="signin" value="&{'fap.login.signin'}" />
 				</div>
 			#{/form}
 			

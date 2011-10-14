@@ -20,10 +20,9 @@
         #{script src:"jquery/jquery-ui.1.8.10.min.js" /}
         #{script src:"jquery/jquery.ui.datepicker-es.js" /}
         
-        
         #{script 'ext/ext-all.js' /}
         #{script 'ext/form/SearchFieldFilter.js' /}
-		
+		#{script 'bootstrap-dropdown.js' /}
 
         <link rel="stylesheet" href="@{'/public/javascripts/chosen/chosen.css'}" />
         #{script 'chosen/chosen.jquery.min.js' /}
@@ -46,6 +45,7 @@
     <body>
     	<div class="container wrapper">
     		<div class="content">
+			
 			<div id="header" class="row">
 				<div id="logoAciisi" class="span8">
 					<a href="@{SolicitudesController.index}" title="&{play.configuration.get('fap.app.name', 'Sin Nombre')}">
@@ -56,13 +56,14 @@
 					<img src="@{'/public/images/logo_ue.gif'}" width="147px" height="64px"/>
 				</div>
 	    	</div>
-	    	
-	    	<div class="cabeceraUsuario row">
+
+	    	<div class="headeruser row">
 				#{if cabeceraUsuario}
 					<div class="span16 getCabeceraUsuario">
 						#{get 'cabeceraUsuario' /}
 					</div>
 				#{/if}
+
 				#{if cabeceraUsuario == null}
 					%{
 						l : {
@@ -71,7 +72,7 @@
 						if (agente != null)
 							user = agente.name ?: agente.username
 					%}	
-					<div class="migas grid_9">
+					<div class="migas">
 						#{if user != null}
 							#{if solicitud != null}
 								#{fap.breadcrumbs solicitud:solicitud.id, title:title, user:user /}
@@ -85,8 +86,28 @@
 						#{/else}
 					</div>
 					
-					<div class="rol grid_3">
-
+					<div class="user">
+						#{if agente.roles.size() > 1}
+							<ul class="secondary-nav">
+							<li class="dropdown" data-dropdown="dropdown" >
+						    <a href="#" class="dropdown-toggle"><strong>Axel Hernández Ferrera ${user}</strong> (${models.TableKeyValue.getValue("roles", agente.rolActivo)})</a>
+						    <ul class="dropdown-menu">
+						      #{if agente.roles.size() > 1}
+						      	#{list items:agente.roles, as:'rol'}
+						      		<li><a href="@{fap.SecureController.changeRol(request.url, rol)}">${models.TableKeyValue.getValue("roles", rol)}</a></li>
+						      	#{/list}
+						      <li class="divider"></li>
+						      #{/if}
+						      <li><a href="@{fap.SecureController.logout()}">&{'fap.header.logout'}</a></li>
+						    </ul>
+						  </li>
+						  </ul>
+						#{/if}
+						#{else}
+							<strong>${user}</strong>
+						#{/else}
+						
+						*{
 						#{if agente != null}
 							#{if agente.roles.size() > 1}
 								#{form @fap.SecureController.changeRol(), id:"changeRolForm"}
@@ -102,6 +123,7 @@
 							#{/if}
 							#{a @fap.SecureController.logout()}&{'fap.header.logout'}#{/a}
 						#{/if}
+						}*
 					%{	
 						}
 					%}	
@@ -110,11 +132,11 @@
 			</div>
 	    				
 			#{if menu != null}
-				<div class="menuAndContent grid_12">
-					<div class="menu grid_2 alpha">
+				<div class="row">
+					<div class="span4">
 					#{get 'menu'/}
 					</div>
-					<div id="content-con-menu" class="grid_10 omega ">
+					<div id="content-con-menu" class="span12">
 						#{doLayout /}
 					</div>
 					<div class="clear"></div>

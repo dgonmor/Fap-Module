@@ -10,6 +10,7 @@ GET			/login			               fap.SecureController.login
 POST        /login/password                fap.SecureController.authenticate
 POST        /login/cert                    fap.SecureController.authenticateCertificate
 GET         /logout                        fap.SecureController.logout
+GET         /user/rol/{rol}				   fap.SecureController.changeRol
 
 #Descarga del AED
 GET         /aed/descargar                 fap.DescargasAedController.descargar
@@ -37,6 +38,13 @@ DELETE /admin/edit/listas/{id} 		          fap.AdminController.delete
 GET /Administracion/logs fap.LoggerController.index
 
 # === FAPGENERATED ===
+GET /Principal/solicitudes SolicitudesController.index
+
+GET /Principal/solicitudes/listaSolicitudes SolicitudesController.tablalistaSolicitudes
+POST /Principal/solicitudes/nuevaSolicitud SolicitudesController.nuevaSolicitud
+GET /Soporte/soporte SoporteController.index
+
+POST /Soporte/soporte/incidencia SoporteController.incidencia
 GET /Administracion/usuarios UsuariosController.index
 
 GET /Administracion/usuarios/listaUsuarios UsuariosController.tablalistaUsuarios
@@ -90,6 +98,7 @@ GET /Solicitud/aportacionpresentar AportacionPresentarController.index
 
 POST /Solicitud/aportacionpresentar/modificarBorrador AportacionPresentarController.modificarBorrador
 POST /Solicitud/aportacionpresentar/presentar AportacionPresentarController.presentar
+POST /Solicitud/aportacionpresentar/presentarSinRegistrar AportacionPresentarController.presentarSinRegistrar
 GET /Solicitud/verificacion VerificacionController.index
 
 POST /Solicitud/verificacion/iniciarVerificacion VerificacionController.iniciarVerificacion
@@ -122,11 +131,4 @@ POST /Solicitud/popupdocaportados/{idEntidad}/borrar popups.PopUpDocAportadosCon
 POST /Solicitud/popupdocaportados/{idEntidad}/crear popups.PopUpDocAportadosController.crear
 POST /Solicitud/popupdocaportados/{idEntidad}/cancelarcrear popups.PopUpDocAportadosController.cancelarCrear
 
-GET /Principal/solicitudes SolicitudesController.index
-
-GET /Principal/solicitudes/listaSolicitudes SolicitudesController.tablalistaSolicitudes
-POST /Principal/solicitudes/nuevaSolicitud SolicitudesController.nuevaSolicitud
-GET /Soporte/soporte SoporteController.index
-
-POST /Soporte/soporte/incidencia SoporteController.incidencia
 # === END FAPGENERATED ===			 
