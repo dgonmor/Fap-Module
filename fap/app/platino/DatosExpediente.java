@@ -40,6 +40,5 @@ public class DatosExpediente {
 	public void setRuta(String ruta) {
 		this.ruta = ruta;
 	}
-	
-	
+		
 }

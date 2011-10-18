@@ -22,7 +22,8 @@ Lista tipoFirmaJuridica {
 
 Lista estadosSolicitud {
 	borrador: "Borrador"
-	iniciada: "Iniciada"	
+	pendienteRegistro: "Pendiente de registro"
+	iniciada: "Iniciada"
 }
 
 Lista TipoDePersona {

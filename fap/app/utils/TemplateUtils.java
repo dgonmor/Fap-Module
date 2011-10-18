@@ -12,6 +12,8 @@ public class TemplateUtils {
         Map<String, Object> templateBinding = new HashMap<String, Object>();
         for (Object o : args) {
             List<String> names = LocalVariablesNamesTracer.getAllLocalVariableNames(o);
+            if (names.isEmpty())
+            	play.Logger.info("vacio");
             for (String name : names) {
                 templateBinding.put(name, o);
             }

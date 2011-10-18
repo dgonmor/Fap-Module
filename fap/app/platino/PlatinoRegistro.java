@@ -24,6 +24,7 @@ import org.joda.time.DateTime;
 import properties.FapProperties;
 
 
+import services.RegistroService;
 import utils.BinaryResponse;
 import utils.CharsetUtils;
 
@@ -34,9 +35,12 @@ import es.gobcan.eadmon.gestordocumental.ws.gestionelementos.dominio.Firmante;
 import es.gobcan.eadmon.gestordocumental.ws.gestionelementos.dominio.PropiedadesAdministrativas;
 import es.gobcan.eadmon.gestordocumental.ws.gestionelementos.dominio.PropiedadesDocumento;
 import es.gobcan.platino.servicios.registro.Asunto;
+import es.gobcan.platino.servicios.registro.ConsultaRegistro;
+import es.gobcan.platino.servicios.registro.ConsultaRegistroNDE;
 import es.gobcan.platino.servicios.registro.Documentos;
 import es.gobcan.platino.servicios.registro.JustificanteRegistro;
 import es.gobcan.platino.servicios.registro.Registro;
+import es.gobcan.platino.servicios.registro.RegistroEntradaInexistente_Exception;
 import es.gobcan.platino.servicios.registro.Registro_Service;
 import es.gobcan.platino.servicios.sgrde.SGRDEServicePortType;
 import es.gobcan.platino.servicios.sgrde.SGRDEServiceProxy;
@@ -51,6 +55,8 @@ import models.Solicitante;
 import models.SolicitudGenerica;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PlatinoRegistro {
 	
@@ -90,6 +96,7 @@ public class PlatinoRegistro {
 //		httpClientPolicy.setContentType("text/xml; charset=ISO-8859-1;");
 //		http.setClient(httpClientPolicy);
 	}
+
 	
 	public static DatosRegistro getDatosRegistro(Solicitante solicitante, Documento documento, ExpedientePlatino expediente) throws Exception {
 			log.debug("Obteniendo los datos de registro del documento " + documento.uri);
@@ -178,11 +185,16 @@ public class PlatinoRegistro {
 		}
 		return listFirmantes;
 	}
+
 	
 	public static JustificanteRegistro registroDeEntrada(DatosRegistro datosRegistro) throws Exception {
+		return registroDeEntrada(datosRegistro, null);
+	}
+
+	public static JustificanteRegistro registroDeEntrada(DatosRegistro datosRegistro, DateTime fechaUsuario) throws Exception {
 		log.info("Preparando registro de entrada");
-		
-		String datosAFirmar = obtenerDatosAFirmarRegisto(datosRegistro);
+							
+		String datosAFirmar = obtenerDatosAFirmarRegisto(datosRegistro, fechaUsuario);
 		log.info(datosAFirmar);
 		
 		String datosFirmados = FirmaClient.firmarPKCS7(datosAFirmar.getBytes("iso-8859-1"));
@@ -190,27 +202,61 @@ public class PlatinoRegistro {
 		
 		// 6) Registrar
 		try {	
-			JustificanteRegistro justificante = registroDeEntrada(datosAFirmar, datosFirmados);
+			JustificanteRegistro justificante = registroDeEntrada(datosAFirmar, datosFirmados, datosRegistro);
 			log.info("Registro de entrada realizado con justificante con NDE " + justificante.getNDE() + " Numero Registro General: " + justificante.getDatosFirmados().getNúmeroRegistro().getContent().get(0)+" Nº Registro Oficina: "+justificante.getDatosFirmados().getNúmeroRegistro().getOficina()+" / "+justificante.getDatosFirmados().getNúmeroRegistro().getNumOficina());
 			log.info("RegistrarEntrada -> EXIT OK");
 			return justificante;
 		} catch (Exception e) {
 			log.error("Error al obtener el justificante y EXIT "+e);
 			log.error("RegistrarEntrada -> EXIT ERROR");
+			play.Logger.info("Error"+e);
 			throw e;
-		}		
+		}
 	}
 	
 	
-	public static JustificanteRegistro registroDeEntrada(String datosAFirmar, String datosFirmados) throws Exception{
+	public static JustificanteRegistro registroDeEntrada(String datosAFirmar, String datosFirmados, DatosRegistro datosRegistro) throws Exception{
 		// Se realiza el registro de Entrada, obteniendo el justificante
 		String username = FapProperties.get("fap.platino.registro.username");
 		String password = FapProperties.get("fap.platino.registro.password");
 		String aliasServidor = FapProperties.get("fap.platino.registro.aliasServidor");
 		
 		String passwdEncripted = PlatinoSecurityUtils.encriptarPassword(password);
-		return registro.registrarEntrada (username, passwdEncripted, datosAFirmar, datosFirmados, aliasServidor, null, null);	
+		
+		JustificanteRegistro justificante = null;
+		
+		
+		play.Logger.info("Registrando");
+		registro.registrarEntrada (username, passwdEncripted, datosAFirmar, datosFirmados, aliasServidor, null, null);
+		play.Logger.info("Registrada");
+		
+		String codigoRegistro = PlatinoGestorDocumentalClient.comprobarRegistroEntrada(datosRegistro.getDocumento().getUriPlatino()); 
+		play.Logger.info("Código de registro = "+codigoRegistro);
+		if ((codigoRegistro != null) && (!codigoRegistro.isEmpty())){
+			try {
+				Pattern pattern = Pattern.compile(".*_.*_.*_(.*)_.*_.*");
+				Matcher matcher = pattern.matcher(codigoRegistro);
+				long numRegistro = new Long(matcher.group(1));
+				play.Logger.info("Numero de registro = "+numRegistro);
+				
+				ConsultaRegistro consulta = new ConsultaRegistro();
+				consulta.setUsuario(username);
+				consulta.setPassword(passwdEncripted);
+				consulta.setNúmeroRegistro(numRegistro);
+				consulta.setEjercicio(datosRegistro.getFecha().getYear());
+				justificante = registro.consultarEntrada(consulta);
+			}catch(RegistroEntradaInexistente_Exception e) {}			
+		}
+		
+		if (justificante != null) 
+			return justificante;
+	
+		play.Logger.info("La solicitud no estaba registrada");
+		justificante = registro.registrarEntrada (username, passwdEncripted, datosAFirmar, datosFirmados, aliasServidor, null, null);
+		throw new Exception();
+//		return justificante;
 	}
+	
 	
 	/**
 	 * Se almacena el documento en el gestor documental.
@@ -222,11 +268,11 @@ public class PlatinoRegistro {
 	 * @return
 	 * @throws Exception
 	 */
-	public static String obtenerDatosAFirmarRegisto(DatosRegistro datosRegistro) throws Exception {
+	public static String obtenerDatosAFirmarRegisto(DatosRegistro datosRegistro, DateTime fechaUsuario) throws Exception {
 		log.info("Ruta expediente "+datosRegistro.getExpediente().getRuta());
 
 		// 2) Guardar documentos en Gestor Documental de Platino. El documento que se guarda es el informe con pie de firma reducido
-		Documentos documentosRegistrar = PlatinoGestorDocumentalClient.guardarSolicitudEnGestorDocumental(datosRegistro.getExpediente().getRuta(), datosRegistro.getDocumento());
+		Documentos documentosRegistrar = PlatinoGestorDocumentalClient.guardarSolicitudEnGestorDocumental(datosRegistro.getExpediente(), datosRegistro.getDocumento());
 		log.info("Documento guardado en Gestor Documental Platino");
 		
 		// 3) Normalizamos los datos
@@ -238,10 +284,13 @@ public class PlatinoRegistro {
 		 // Se ha de indicar porque si no pone NIF por defecto
 		String tipoDocumento = datosRegistro.getTipoDocumento();
 		
-		
-		
+				
 		//Poner fecha en la que se produce la solicitud
-		XMLGregorianCalendar fecha = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar());
+		XMLGregorianCalendar fecha;
+		if (fechaUsuario != null) //la solicitud estaba pendiente de registrar
+			fecha = DatatypeFactory.newInstance().newXMLGregorianCalendar(fechaUsuario.toGregorianCalendar());
+		else
+			fecha = DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar());
 		
 		Asunto asunto = new Asunto();
 		

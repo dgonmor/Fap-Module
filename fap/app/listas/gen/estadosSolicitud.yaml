@@ -3,6 +3,11 @@ TableKeyValue(estadosSolicitud-borrador):
   key: 'borrador'
   value: 'Borrador'
 
+TableKeyValue(estadosSolicitud-pendienteRegistro):
+  table: 'estadosSolicitud'
+  key: 'pendienteRegistro'
+  value: 'Pendiente de registro'
+
 TableKeyValue(estadosSolicitud-iniciada):
   table: 'estadosSolicitud'
   key: 'iniciada'

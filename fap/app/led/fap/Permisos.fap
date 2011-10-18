@@ -91,6 +91,8 @@ when
 		(
 			action = "update"
 			and
+			solicitud.estado != "pendienteRegistro"
+			and
 			(
 				(
 					agente.rolActivo = "usuario"
@@ -102,6 +104,7 @@ when
 					agente.rolActivo = "administrador"
 					and
 					solicitud.registro.fasesRegistro.clasificarAed = "false"
+					
 				)
 			)
 		)

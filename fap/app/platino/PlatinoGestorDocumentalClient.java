@@ -1,6 +1,9 @@
 package platino;
 
 import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import javax.activation.DataHandler;
@@ -12,21 +15,29 @@ import javax.xml.ws.soap.MTOMFeature;
 import models.ExpedientePlatino;
 
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 
 import properties.FapProperties;
+import utils.PlatinoEncodeRute;
 
+import es.gobcan.eadmon.gestordocumental.ws.gestionelementos.dominio.Sellado;
 import es.gobcan.platino.servicios.registro.Documento;
 import es.gobcan.platino.servicios.registro.Documentos;
+import es.gobcan.platino.servicios.registro.JustificanteRegistro;
 import es.gobcan.platino.servicios.sfst.FirmaService;
 import es.gobcan.platino.servicios.sfst.PlatinoSignatureServerBean;
 import es.gobcan.platino.servicios.sgrde.DocumentoBase;
 import es.gobcan.platino.servicios.sgrde.DocumentoExpediente;
+import es.gobcan.platino.servicios.sgrde.ElementoNoEncontradoException;
 import es.gobcan.platino.servicios.sgrde.ErrorInternoException;
 import es.gobcan.platino.servicios.sgrde.Expediente;
 import es.gobcan.platino.servicios.sgrde.FirmasElectronicas;
+import es.gobcan.platino.servicios.sgrde.HistoricoVersiones;
 import es.gobcan.platino.servicios.sgrde.InformacionFirmaElectronica;
 import es.gobcan.platino.servicios.sgrde.SGRDEServicePortType;
 import es.gobcan.platino.servicios.sgrde.SGRDEServiceProxy;
+import es.gobcan.platino.servicios.sgrde.Sellados;
+import es.gobcan.platino.servicios.sgrde.UsuarioNoValidoException;
 
 public class PlatinoGestorDocumentalClient {
 	private static Logger log = Logger.getLogger(PlatinoGestorDocumentalClient.class);
@@ -52,7 +63,7 @@ public class PlatinoGestorDocumentalClient {
 		
 		PlatinoProxy.setProxy(gestorDocumental);
 	}
-	
+		
 	/**
 	 * Crea un expediente en el Gestor Documental de Platino
 	 */
@@ -62,6 +73,7 @@ public class PlatinoGestorDocumentalClient {
 		Expediente expediente = new Expediente();
 		
 		XMLGregorianCalendar fechaApertura = DatatypeFactory.newInstance().newXMLGregorianCalendar(exp.getFechaApertura().toGregorianCalendar());
+		
 		expediente.setFechaApertura(fechaApertura);
 		
 		expediente.setNumeroExp(exp.getNumero());
@@ -86,11 +98,38 @@ public class PlatinoGestorDocumentalClient {
 			throw e;
 		}
 	}
+
+	/**
+	 * Comprueba si la solicitud existe dentro del expediente en el Gestor Documental de Platino
+	 */
+	public static String comprobarSolicitudExpediente(String expedientePlatinoRuta, DatosDocumento documentoRegistrar) throws Exception {		
+		String ruta = PlatinoEncodeRute.encode(expedientePlatinoRuta);
+		String consulta = "Ruta:\""+ruta+"/*\" AND Tipo_Doc:\""+documentoRegistrar.getTipoDoc()+"\"";
+		List<String> uris = gestorDocumental.buscarDocumentos(consulta, 1);
+		return uris.isEmpty() ? null:uris.get(0);
+	}
+	
+
+	/**
+	 * Comprueba si el expediente fue creado en el Gestor Documental de Platino
+	 */
+	public static String comprobarRegistroEntrada(String uri) throws Exception {
+		play.Logger.info("ComprobarRegistroEntrada   -->IN");
+		String out = null;
+		if (uri != null) {
+			play.Logger.info("Uri = "+uri);
+			DocumentoBase doc = gestorDocumental.obtenerMetaDoc(uri);
+			play.Logger.info(""+((DocumentoExpediente)doc).getAcceso());
+		}
+		play.Logger.info("ComprobarRegistroEntrada   -->OUT ");
+		return out;
+	}
+
 	
 	/**
 	 * Crea un documento en el Gestor Documental de Platino
 	 */
-	public static DocumentoExpediente guardarDocumento(String expedientePlatinoRuta,DatosDocumento documentoRegistrar) throws Exception {
+	public static DocumentoExpediente guardarSolicitud(DatosExpediente datosExpediente,DatosDocumento documentoRegistrar) throws Exception {
 		try {
 		    // Metainformación  
 		    DocumentoExpediente documentoExpediente = new DocumentoExpediente();
@@ -117,20 +156,26 @@ public class PlatinoGestorDocumentalClient {
 		    }
 		    documentoExpediente.setFirmasElectronicas(firmasElec);
 		    
-		    // Ruta
-		    UUID uuidDocumento = UUID.randomUUID();	
-		    String ruta = expedientePlatinoRuta + "/" + uuidDocumento;
-		    
-		    DocumentoBase docBase;
-		    // Insertar documento en el Gestor Documental
-		    DataHandler dataHandler = new DataHandler(documentoRegistrar.getContenido());
-		    log.info("Inserta documento en el gestor documental");
-			String urn = gestorDocumental.insertarDocumento(dataHandler, ruta, documentoExpediente); // Metainformación
-			log.info("Documento insertado");
-			
+		    String urn = comprobarSolicitudExpediente(datosExpediente.getRuta(),documentoRegistrar);
+		    if (urn == null) { //La solicitud no esta en el expediente
+				log.info("El documento no está creado");
+
+		    	// Ruta
+		    	UUID uuidDocumento = UUID.randomUUID();	
+		    	String ruta = datosExpediente.getRuta() + "/" + uuidDocumento;
+
+		    	DocumentoBase docBase;
+		    	// Insertar documento en el Gestor Documental
+		    	DataHandler dataHandler = new DataHandler(documentoRegistrar.getContenido());
+		    	log.info("Inserta documento en el gestor documental");
+		    	urn = gestorDocumental.insertarDocumento(dataHandler, ruta, documentoExpediente); // Metainformación
+		    	log.info("Documento insertado");
+		    }
+		    else {
+		    	log.info("El documento ya estaba insertado en el gestor documental");
+		    }
 			documentoExpediente.setURI(urn);
 			documentoRegistrar.setUriPlatino(urn);
-
 
 			return documentoExpediente;
 	    } catch (Exception e) {
@@ -145,14 +190,13 @@ public class PlatinoGestorDocumentalClient {
 	/**
 	 * Devuelve la lista de documentos preparados para registrar
 	 */
-	public static Documentos guardarSolicitudEnGestorDocumental(String expedienteGestorDocumentalRuta, DatosDocumento documentoRegistrar) throws Exception {
+	public static Documentos guardarSolicitudEnGestorDocumental(DatosExpediente datosExpediente, DatosDocumento documentoRegistrar) throws Exception {
 		log.info("GuardarSolicitudEnGestorDocumental -> IN");
 		Documentos documentosGestorDocumental = new Documentos();
-		// 2A) Insertar Documento de la Solicitud en el Gestor Documental (en el expediente creado)
+		// 2A) Insertar Documento de la Solicitud en el Gestor Documental (en el expediente creado)				
 		if (documentoRegistrar.getUriPlatino() == null) {
 			// Hay que guardarlo en el Gestor Documental
-			log.info("El documento no está creado");
-			DocumentoExpediente documentoExpedientePlatino = guardarDocumento(expedienteGestorDocumentalRuta, documentoRegistrar);
+			DocumentoExpediente documentoExpedientePlatino = guardarSolicitud(datosExpediente, documentoRegistrar);
 			documentoRegistrar.setUriPlatino(documentoExpedientePlatino.getURI());
 			log.info("Documento creado con URI "+documentoRegistrar.getUriPlatino());
 		} else {

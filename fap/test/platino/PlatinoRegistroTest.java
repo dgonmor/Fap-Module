@@ -12,7 +12,7 @@ import play.test.UnitTest;
 
 public class PlatinoRegistroTest extends UnitTest {
 
-	@Test
+/*	@Test
 	public void normalizarDatos() throws Exception{
 		SolicitudGenerica solicitud = SolicitudGenerica.findById(2L);
 		DatosRegistro datosRegistro = PlatinoRegistro.getDatosRegistro(solicitud.solicitante, solicitud.registro.oficial, solicitud.expedientePlatino);
@@ -26,7 +26,6 @@ public class PlatinoRegistroTest extends UnitTest {
 		
 		PlatinoRegistro.registroDeEntrada(datosAFirmar, firma);
 	}
-	
-	
+*/
 	
 }

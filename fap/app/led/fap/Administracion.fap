@@ -11,6 +11,8 @@ Formulario Administracion permiso=administrador{
 			Enlace "Logs" accion="fap.LoggerController.index"
 			Enlace "Informe" accion="fap.InformeController.index"
 			Enlace "Consultas a BBDD" accion="fap.ConsultasController.index"
+			Enlace "Solicitudes pendientes de registro" pagina=SolicitudesPendientes
+			//			Enlace "Plantilla PDF" pagina="PlantillaPdf"			
 		}
 		
 		Enlace "Ayuda" pagina=Soporte.Soporte
@@ -151,5 +153,18 @@ En los campos '''Para''' y '''CC''' puede poner varios destinatarios separados p
     	AreaTexto campo=Consulta.descripcion titulo="Descripcion" requerido
     	AreaTexto campo=Consulta.consulta titulo="Consulta" requerido
     	Combo campo=Consulta.tipo titulo="Tipo" requerido
+    }
+    
+    Pagina SolicitudesPendientes noForm {
+
+	    Tabla tabladetablas titulo="Solicitudes Pendientes" campo=SolicitudesPendientesRegistro.solicitudes {
+	        Columna campo=SolicitudPendienteRegistro.solicitud.id titulo="Solicitud"
+	        Columna campo=SolicitudPendienteRegistro.fecha titulo="Fecha"
+	    }
+
+	    Form registrarSolicitudes {
+                Boton titulo="Registrar solicitudes pendientes"
+	    }
+    	
     }
 }

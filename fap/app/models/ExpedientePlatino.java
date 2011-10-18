@@ -82,12 +82,12 @@ public class ExpedientePlatino extends Model {
 	public String getRuta(){
 		if(ruta == null){
 			String procedimiento = FapProperties.get("fap.platino.gestordocumental.procedimiento");
-			ruta = "expedientes/" + procedimiento + "/" + fechaApertura.getYear() + "/" + getNumero();	
+			ruta = "expedientes/" + procedimiento + "/F-" + fechaApertura.getYear() + "/N-" + getNumero();	
 			save();
 		}
 		return ruta;
 	}
-	
+		
 // === MANUAL REGION END ===
 	
 	

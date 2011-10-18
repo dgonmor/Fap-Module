@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import javax.activation.DataSource;
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -13,6 +14,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 
 import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 
@@ -29,6 +31,7 @@ import platino.DatosExpediente;
 import platino.DatosRegistro;
 import platino.PlatinoGestorDocumentalClient;
 import platino.PlatinoRegistro;
+import play.classloading.enhancers.LocalvariablesNamesEnhancer.LocalVariablesNamesTracer;
 import properties.FapProperties;
 import utils.BinaryResponse;
 import messages.Messages;
@@ -43,23 +46,46 @@ import models.SemillaExpediente;
 import models.Singleton;
 import models.Solicitante;
 import models.SolicitudGenerica;
+import models.SolicitudPendienteRegistro;
+import models.SolicitudesPendientesRegistro;
 import models.TableKeyValue;
 
 public class RegistroService {
-	
+
 	private static Logger log = Logger.getLogger(RegistroService.class);
-	
-	
+
+
 	/**
 	 * Registra la solicitud
 	 * @throws RegistroException
 	 */
-	public static void registrarSolicitud(SolicitudGenerica solicitud) throws RegistroException {
+	public static void registrarSolicitud(SolicitudGenerica solicitud) throws RegistroException, PlatinoException {
+		registrarSolicitud(solicitud, null); // si la fecha es null usa la fecha actual.
+	}
+
+	/**
+	 * Registra la solicitud
+	 * @throws RegistroException
+	 */
+	public static void registrarSolicitud(SolicitudGenerica solicitud, DateTime fecha) throws RegistroException, PlatinoException {
+		registrarSolicitudFase1(solicitud);
+		registrarSolicitudFase2(solicitud, fecha);
+		registrarSolicitudFase3(solicitud, fecha);
+		registrarSolicitudFase4(solicitud);
+	}	 
+
+	/**
+	 * Comprueba que la solicitud esta firmada y la obligatoriedad de los documentos aportados
+	 * @param solicitud
+	 * @throws RegistroException
+	 * @throws PlatinoException
+	 */
+	private static void registrarSolicitudFase1(SolicitudGenerica solicitud) throws RegistroException, PlatinoException {
 		if(!solicitud.registro.fasesRegistro.borrador){
 			Messages.error("Intentando registrar una solicitud que no se ha preparado para firmar");
 			throw new RegistroException("Intentando registrar una solicitud que no se ha preparado para firmar");
 		}
-		
+
 		if(!solicitud.registro.fasesRegistro.firmada){
 			Messages.error("Intentando registrar una solicitud que no ha sido firmada");
 			throw new RegistroException("Intentando registrar una solicitud que no ha sido firmada");
@@ -75,7 +101,7 @@ public class RegistroService {
 				else if(docObli.automaticas.remove(tipo)) continue;
 			}
 		}
-		
+
 		if (!docObli.imprescindibles.isEmpty()) {
 			for (String uri : docObli.imprescindibles) {
 				String descripcion = TableKeyValue.getValue("tipoDocumentosCiudadanos", uri);
@@ -86,46 +112,74 @@ public class RegistroService {
 		if (!docObli.obligatorias.isEmpty()) {
 			for (String uri : docObli.obligatorias) {
 				String descripcion = TableKeyValue.getValue("tipoDocumentosCiudadanos", uri);
-				Messages.warning("Documento \""+ descripcion + "\" pendiente de aportación 1");
+				Messages.warning("Documento \""+ descripcion + "\" pendiente de aportación");
 			}
 		}
 		if (!docObli.automaticas.isEmpty()) {
 			for (String uri : docObli.automaticas) {
 				if (solicitud.documentoEsObligatorio(uri)) {
 					String descripcion = TableKeyValue.getValue("tipoDocumentosCiudadanos", uri);
-					Messages.warning("Documento \""+ descripcion + "\" pendiente de aportación 2");
+					Messages.warning("Documento \""+ descripcion + "\" pendiente de aportación");
 				}
 			}
-		}
-		
+		}		
+	}
+
+	/**
+	 * Crea el expediente de platino 
+	 * @param solicitud
+	 * @throws RegistroException
+	 * @throws PlatinoException
+	 */
+	private static void registrarSolicitudFase2(SolicitudGenerica solicitud, DateTime fecha) throws RegistroException, PlatinoException {
 		//Crea el expediente en el archivo electrónico de platino
 		if(!solicitud.registro.fasesRegistro.expedientePlatino){
 			try {
 				PlatinoGestorDocumentalClient.crearExpediente(solicitud.expedientePlatino);
-			
+
 				solicitud.registro.fasesRegistro.expedientePlatino = true;
 				solicitud.registro.fasesRegistro.save();
 			} catch (Exception e) {
-				Messages.error("Error creando expediente en el gestor documental de platino");
-				throw new RegistroException("Error creando expediente en el gestor documental de platino");
+				solicitudPendienteRegistro(solicitud, fecha);
+				Messages.warning("Error creando expediente en el gestor documental de platino");
+				throw new PlatinoException("Error creando expediente en el gestor documental de platino");
 			}
 		}else{
 			play.Logger.debug("El expediente de platino para la solicitud %s ya está creado", solicitud.id);
-		}
-		
-		
+		}		
+	}
+
+	/**
+	 * Registra la solicitud y la añade al AED
+	 * @param solicitud
+	 * @param fecha
+	 * @throws RegistroException
+	 * @throws PlatinoException
+	 */
+	private static void registrarSolicitudFase3(SolicitudGenerica solicitud, DateTime fecha) throws RegistroException, PlatinoException {
+		LocalVariablesNamesTracer.addVariable("solicitud", solicitud);
+
 		//Registra la solicitud
 		if(!solicitud.registro.fasesRegistro.registro){
+			JustificanteRegistro justificante = null;
 			try {
 				DatosRegistro datos = PlatinoRegistro.getDatosRegistro(solicitud.solicitante, solicitud.registro.oficial, solicitud.expedientePlatino);
-				//Registra la solicitud
-				JustificanteRegistro justificante = PlatinoRegistro.registroDeEntrada(datos);
-				play.Logger.info("Se ha registrado la solicitud %s en platino, solicitud.id");
 				
+				//Registra la solicitud
+				justificante = PlatinoRegistro.registroDeEntrada(datos, fecha);
+				
+				play.Logger.info("Se ha registrado la solicitud %s en platino", solicitud.id);
+
 				//Almacena la información de registro
 				solicitud.registro.informacionRegistro.setDataFromJustificante(justificante);
 				play.Logger.info("Almacenada la información del registro en la base de datos");
+			} catch (Exception e) {
+				solicitudPendienteRegistro(solicitud, fecha);
+				Messages.warning("Error al registrar de entrada la solicitud");
+				throw new PlatinoException("Error al obtener el justificante del registro de entrada");
+			}
 
+			try {
 				//Guarda el justificante en el AED
 				play.Logger.info("Se procede a guardar el justificante de la solicitud %s en el AED", solicitud.id);
 				Documento documento = solicitud.registro.justificante;
@@ -133,13 +187,13 @@ public class RegistroService {
 				documento.descripcion = "Justificante de registro de la solicitud";
 				documento.save();
 				AedClient.saveDocumentoTemporal(documento, justificante.getReciboPdf().getInputStream(), "JustificanteSolicitudPDF" + solicitud.id + ".pdf");
-				
+
 				solicitud.registro.fasesRegistro.registro = true;
 				solicitud.registro.fasesRegistro.save();
-				
+
 				play.Logger.info("Justificante almacenado en el AED");
-				
-				
+
+
 				// Establecemos las fechas de registro para todos los documentos de la solicitud
 				List<Documento> documentos = new ArrayList<Documento>();
 				documentos.addAll(solicitud.documentacion.documentos);
@@ -150,18 +204,20 @@ public class RegistroService {
 						doc.fechaRegistro = solicitud.registro.informacionRegistro.fechaRegistro;
 					}
 				}
-				play.Logger.info("Fechas de registro establecidas a  "+solicitud.registro.informacionRegistro.fechaRegistro);
-				
+				play.Logger.info("Fechas de registro establecidas a  "+solicitud.registro.informacionRegistro.fechaRegistro);		
+
 			} catch (Exception e) {
 				Messages.error("Error al registrar de entrada la solicitud");
-				throw new RegistroException("Error al obtener el justificante del registro de entrada");
-			}
+				throw new RegistroException("Error al almacenar el justificante de entrada en el AED");
+			}			
 		}else{
 			play.Logger.debug("La solicitud %s ya está registrada", solicitud.id);
-		}
-		
-		
-		
+		}		
+	}
+
+	private static void registrarSolicitudFase4(SolicitudGenerica solicitud) {
+		LocalVariablesNamesTracer.addVariable("solicitud", solicitud);
+
 		//Crea el expediente en el AED
 		if(!solicitud.registro.fasesRegistro.expedienteAed){
 			AedClient.crearExpediente(solicitud);
@@ -177,7 +233,7 @@ public class RegistroService {
 			solicitud.save();
 			Mails.enviar("solicitudIniciada", solicitud);
 		}
-	
+
 		//Clasifica los documentos en el AED
 		if(!solicitud.registro.fasesRegistro.clasificarAed){
 			//Clasifica los documentos sin registro
@@ -185,12 +241,12 @@ public class RegistroService {
 			documentos.addAll(solicitud.documentacion.documentos);
 			documentos.add(solicitud.registro.justificante);
 			boolean todosClasificados = AedClient.clasificarDocumentos(solicitud, documentos);
-			
+
 			//Clasifica los documentos con registro de entrada
 			List<Documento> documentosRegistrados = new ArrayList<Documento>();
 			documentosRegistrados.add(solicitud.registro.oficial);
 			todosClasificados = todosClasificados && AedClient.clasificarDocumentos(solicitud, documentosRegistrados, solicitud.registro.informacionRegistro);
-			
+
 			if(todosClasificados){
 				solicitud.registro.fasesRegistro.clasificarAed = true;
 				solicitud.registro.fasesRegistro.save();
@@ -199,19 +255,66 @@ public class RegistroService {
 			}
 		}else{
 			play.Logger.debug("Ya están clasificados todos los documentos de la solicitud %s", solicitud.id);
-		}
-	}	 
-	
+		}		
+	}
 
+	public static void solicitudPendienteRegistro(SolicitudGenerica solicitud, DateTime fecha) {
+		SolicitudesPendientesRegistro solicitudesPendientes = SolicitudesPendientesRegistro.get(SolicitudesPendientesRegistro.class);
+		solicitud.estado = "pendienteRegistro";
+		solicitud.save();
+
+		SolicitudPendienteRegistro solicitudPendiente = new SolicitudPendienteRegistro();
+		if (fecha == null)
+			fecha = new DateTime();
+		solicitudPendiente.fecha = fecha;
+		solicitudPendiente.solicitud = solicitud;
+
+		solicitudesPendientes.solicitudes.add(solicitudPendiente);
+		solicitudesPendientes.save();
+	}
+
+	public static void registrarSolicitudPendiente(SolicitudGenerica solicitud, DateTime fecha) throws Exception {
+		try {
+			registrarSolicitudFase2(solicitud, fecha);
+			registrarSolicitudFase3(solicitud, fecha);			
+		} catch (Exception e) {
+			throw e;
+		}
+		registrarSolicitudFase4(solicitud);
+
+	}
+
+	public static void registrarSolicitudesPendientes(){		
+		SolicitudesPendientesRegistro solicitudesPendientes = SolicitudesPendientesRegistro.get(SolicitudesPendientesRegistro.class);
+		
+		List<SolicitudPendienteRegistro> copiaSolicitudesPendientes = new ArrayList<SolicitudPendienteRegistro>();
+		
+		copiaSolicitudesPendientes.addAll(solicitudesPendientes.solicitudes);
+
+		solicitudesPendientes.solicitudes.clear();
+		solicitudesPendientes.save();
+		
+		for (SolicitudPendienteRegistro pendiente : copiaSolicitudesPendientes) {
+			try {
+				RegistroService.registrarSolicitudPendiente(pendiente.solicitud, pendiente.fecha);
+			} catch (RegistroException e) {
+				RegistroService.solicitudPendienteRegistro(pendiente.solicitud, pendiente.fecha);
+				play.Logger.fatal(e, "Error de registro al registrar solicitud pendiente %s",pendiente.solicitud.id);				
+			} catch (Exception e) {
+				play.Logger.error(e, "Error registrando la solicitud pendiente %s",pendiente.solicitud.id);
+			}
+		}
+	}
+	
 	public static void registrarAportacionActual(SolicitudGenerica solicitud) throws RegistroException {
+
 		//Registra la solicitud
-		
 		Aportacion aportacion = solicitud.aportaciones.actual; 
-		
+
 		if(aportacion.estado == null){
 			Messages.error("La solicitud no está firmada");
 		}
-		
+
 		//Registro de entrada en platino
 		if(aportacion.estado.equals("firmada")){
 			try {
@@ -219,7 +322,7 @@ public class RegistroService {
 				//Registra la solicitud
 				JustificanteRegistro justificante = PlatinoRegistro.registroDeEntrada(datos);
 				play.Logger.info("Se ha registrado la solicitud de aportacion de la solicitud %s en platino", solicitud.id);
-				
+
 				//Almacena la información de registro
 				aportacion.informacionRegistro.setDataFromJustificante(justificante);
 				play.Logger.info("Almacenada la información del registro en la base de datos");
@@ -231,11 +334,11 @@ public class RegistroService {
 				documento.descripcion = "Justificante de registro de la solicitud";
 				documento.save();
 				AedClient.saveDocumentoTemporal(documento, justificante.getReciboPdf().getInputStream(), "JustificanteSolicitudPDF" + solicitud.id + ".pdf");
-				
+
 				aportacion.estado = "registrada";
 				aportacion.save();
 				Mails.enviar("aportacionRealizada", solicitud);
-				
+
 				play.Logger.info("Justificante almacenado en el AED");
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -245,7 +348,7 @@ public class RegistroService {
 		}else{
 			play.Logger.debug("La solicitud %s ya está registrada", solicitud.id);
 		}
-		
+
 		//Clasifica los documentos
 		if(aportacion.estado.equals("registrada")){
 			//Clasifica los documentos sin registro
@@ -253,12 +356,12 @@ public class RegistroService {
 			documentos.addAll(aportacion.documentos);
 			documentos.add(aportacion.justificante);
 			boolean todosClasificados = AedClient.clasificarDocumentos(solicitud, documentos);
-			
+
 			//Clasifica los documentos con registro de entrada
 			List<Documento> documentosRegistrados = new ArrayList<Documento>();
 			documentosRegistrados.add(aportacion.oficial);
 			todosClasificados = todosClasificados && AedClient.clasificarDocumentos(solicitud, documentosRegistrados, aportacion.informacionRegistro);
-			
+
 			if(todosClasificados){
 				aportacion.estado = "clasificada";
 				aportacion.save();
@@ -269,7 +372,7 @@ public class RegistroService {
 		}else{
 			play.Logger.debug("Ya están clasificados todos los documentos de la solicitud %s", solicitud.id);
 		}
-		
+
 		//Mueve la aportación a la lista de aportaciones clasificadas
 		//Añade los documentos a la lista de documentos
 		if(aportacion.estado.equals("clasificada")){
@@ -279,13 +382,12 @@ public class RegistroService {
 			solicitud.save();
 			aportacion.estado = "finalizada";
 			aportacion.save();
-			
+
 			play.Logger.debug("Los documentos de la aportacion se movieron correctamente");
 		}
-		
-		
+
+
 	}
-	
 	
 	/** Aportación sin registro de los documentos 
 	 * 
@@ -340,9 +442,9 @@ public class RegistroService {
 			
 			aportacion.estado = "finalizada";
 			aportacion.save();
-			
+
 			play.Logger.debug("Los documentos de la aportacion se movieron correctamente");
 		}
 	}
-	
+
 }

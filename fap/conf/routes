@@ -98,6 +98,40 @@ POST /Solicitud/popupdocaportados/{idEntidad}/crear popups.PopUpDocAportadosCont
 POST /Solicitud/popupdocaportados/{idEntidad}/cancelarcrear popups.PopUpDocAportadosController.cancelarCrear
 
 GET /Administracion/usuarios UsuariosController.index
+GET /Principal/solicitudes SolicitudesController.index
+GET /Administracion/usuarios UsuariosController.index
+
+GET /Administracion/usuarios/listaUsuarios UsuariosController.tablalistaUsuarios
+POST /Administracion/usuarios/save UsuariosController.save
+GET /Administracion/aed AedController.index
+
+POST /Administracion/aed/tiposDeDocumentos AedController.tiposDeDocumentos
+GET /Administracion/requerimientos RequerimientosController.index
+
+POST /Administracion/requerimientos/save RequerimientosController.save
+GET /Administracion/tabladetablas TablaDeTablasController.index
+
+GET /Administracion/tabladetablas/tabladetablas TablaDeTablasController.tablatabladetablas
+POST /Administracion/tabladetablas/actualizarDesdeFichero TablaDeTablasController.actualizarDesdeFichero
+GET /Administracion/emails EmailsController.index
+
+GET /Administracion/emails/emails EmailsController.tablaemails
+POST /Administracion/emails/actualizarDesdeFichero EmailsController.actualizarDesdeFichero
+GET /Administracion/solicitudespendientes SolicitudesPendientesController.index
+
+GET /Administracion/solicitudespendientes/tabladetablas SolicitudesPendientesController.tablatabladetablas
+POST /Administracion/solicitudespendientes/registrarSolicitudes SolicitudesPendientesController.registrarSolicitudes
+GET /Administracion/popupusuario/{idEntidad}/abrir popups.PopupUsuarioController.abrir
+POST /Administracion/popupusuario/{idEntidad}/editar popups.PopupUsuarioController.editar
+POST /Administracion/popupusuario/{idEntidad}/borrar popups.PopupUsuarioController.borrar
+POST /Administracion/popupusuario/{idEntidad}/crear popups.PopupUsuarioController.crear
+POST /Administracion/popupusuario/{idEntidad}/cancelarcrear popups.PopupUsuarioController.cancelarCrear
+
+GET /Administracion/popuptabladetablas/{idEntidad}/abrir popups.PopupTablaDeTablasController.abrir
+POST /Administracion/popuptabladetablas/{idEntidad}/editar popups.PopupTablaDeTablasController.editar
+POST /Administracion/popuptabladetablas/{idEntidad}/borrar popups.PopupTablaDeTablasController.borrar
+POST /Administracion/popuptabladetablas/{idEntidad}/crear popups.PopupTablaDeTablasController.crear
+POST /Administracion/popuptabladetablas/{idEntidad}/cancelarcrear popups.PopupTablaDeTablasController.cancelarCrear
 
 GET /Administracion/usuarios/listaUsuarios UsuariosController.tablalistaUsuarios
 POST /Administracion/usuarios/save UsuariosController.save

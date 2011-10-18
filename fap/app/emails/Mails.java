@@ -10,7 +10,9 @@ import models.*;
 public class Mails {
 			
 	public static void enviar(String idMail, Object... args) {
+		play.Logger.info("argumentos antes %s", args);
 		Map<String, Object> argsMap = TemplateUtils.obtenerArg(args);
+		play.Logger.info("argumentos despues %s", argsMap);
 		Mail email = Mail.find("select mail from Mail mail where mail.idMail=?", idMail).first();
 		if(email != null){
 			email.send(argsMap);

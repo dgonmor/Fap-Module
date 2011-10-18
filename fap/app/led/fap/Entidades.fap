@@ -360,3 +360,12 @@ Entidad Consulta {
 	LongText consulta
 	Lista tipoConsulta tipo
 }
+
+Entidad SolicitudPendienteRegistro {
+	DateTime fecha
+	OneToOne SolicitudGenerica solicitud noConstruct
+}
+
+Entidad SolicitudesPendientesRegistro extends Singleton {
+	OneToMany SolicitudPendienteRegistro solicitudes
+}
